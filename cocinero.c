@@ -4,24 +4,9 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <semaphore.h>
-#include <signal.h>
-
-const int CONTADORES = 3;
-const int BUFFER_SIZE = sizeof(int) * CONTADORES;
-const char *SHM_NAME = "/shared_mem";
-const char *SEM_MESADA = "/sem_MESADA";
-const char *SEM_MUTEX = "/sem_MUTEX";
-const int MAX_PLATOS_MOSTRADOR = 27;
-
-int terminar = 0;
-
-void manejar_senal(int sig) {
-    terminar = 1;
-}
+#include "constantes.h"
 
 int main() {
-    signal(SIGTERM, manejar_senal);
-    
     int shm_fd = shm_open(SHM_NAME, O_RDWR, 0);
     if (shm_fd == -1) {
         exit(1);
@@ -34,48 +19,61 @@ int main() {
     
     sem_t *sem_mesada = sem_open(SEM_MESADA, 0);
     sem_t *sem_mutex = sem_open(SEM_MUTEX, 0);
+    sem_t *sem_barrera = sem_open(SEM_BARRERA, 0);
 
-    if (sem_mesada == SEM_FAILED || sem_mutex == SEM_FAILED) {
+    if (sem_mesada == SEM_FAILED || sem_mutex == SEM_FAILED || sem_barrera == SEM_FAILED) {
         exit(1);
     }
 
-    while (!terminar) {
-        // Verificar si debo llenar la mesada
+    while (1) {
+        // Verificar bandera de terminación
         sem_wait(sem_mutex);
+        int debe_terminar = mem[3];
         int platos_actuales = mem[0];
         int pedidos_restantes = mem[2];
         sem_post(sem_mutex);
 
-        if (pedidos_restantes <= 0) {
+        if (debe_terminar || pedidos_restantes <= 0) {
             break;
         }
 
         if (platos_actuales == 0) {
             // Llenar la mesada completa
-            for (int i = 0; i < MAX_PLATOS_MOSTRADOR && !terminar; i++) {
+            for (int i = 0; i < MAX_PLATOS_MOSTRADOR; i++) {
+                // Verificar bandera antes de cada producción
+                sem_wait(sem_mutex);
+                debe_terminar = mem[3];
+                int seguir = (mem[2] > 0 && !debe_terminar);
+                sem_post(sem_mutex);
+                
+                if (!seguir) {
+                    break;
+                }
+                
                 sleep(1); // Simular tiempo de preparación
                 
                 sem_wait(sem_mutex);
-                if (mem[2] > 0) {  // Solo producir si quedan pedidos
-                    mem[0]++;
-                    printf("Cocinero %d: generó un plato. Platos en mostrador: %d\n", getpid(), mem[0]);
-                    sem_post(sem_mutex);
-                    sem_post(sem_mesada); // Señalar que hay un plato disponible
-                } else {
-                    sem_post(sem_mutex);
-                    break;
-                }
+                mem[0]++;
+                printf(AZUL "🍳 Cocinero %d" RESET " → generó un plato. " 
+                       NEGRITA "Platos en mostrador: %d\n" RESET, getpid(), mem[0]);
+                sem_post(sem_mutex);
+                
+                sem_post(sem_mesada);
             }
             
-            printf("Cocinero %d: mesada llena, esperando a que se vacíe...\n", getpid());
+            printf(AZUL "⏸️  Cocinero %d" RESET " → mesada llena, esperando a que se vacíe...\n", getpid());
         }
         
-        sleep(1); // Esperar antes de verificar nuevamente
+        sleep(1);
     }
+
+    // Notificar terminación a través de la barrera
+    sem_post(sem_barrera);
 
     munmap(mem, BUFFER_SIZE);
     close(shm_fd);
     sem_close(sem_mesada);
     sem_close(sem_mutex);
+    sem_close(sem_barrera);
     return 0;
 }
