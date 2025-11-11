@@ -1,0 +1,9 @@
+# Ignora todos los archvivos
+*
+
+# pseudo-whitelist
+!main.c
+!mozo.c
+!cocinero.c
+!repostero.c
+!.gitignore
