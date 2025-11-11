@@ -6,23 +6,17 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include <sys/wait.h>
-#include <signal.h>
-
-const int CONTADORES = 3;
-const int BUFFER_SIZE = sizeof(int) * CONTADORES;
-const char *SHM_NAME = "/shared_mem";
-const char *SEM_MESADA = "/sem_MESADA";
-const char *SEM_HELADERA = "/sem_HELADERA";
-const char *SEM_MUTEX = "/sem_MUTEX";
-
-pid_t pids[9];
-int num_procesos = 0;
+#include "constantes.h"
 
 int main() {
     int pedidos_totales;
     
-    printf("Ingrese la cantidad de pedidos a entregar: ");
+    printf(NEGRITA CYAN "\n==============================================\n" RESET);
+    printf(NEGRITA CYAN "SISTEMA DE GESTIÓN DE \"LA ALBONDIGA EMBRUJADA\"\n" RESET);
+    printf(NEGRITA CYAN "==============================================\n\n" RESET);
+    printf(AMARILLO "Ingrese la cantidad de pedidos a entregar: " RESET);
     scanf("%d", &pedidos_totales);
+    printf("\n");
 
     // Limpiar recursos previos
     shm_unlink(SHM_NAME);
@@ -49,12 +43,10 @@ int main() {
     }
 
     // Inicializar memoria compartida
-    // mem[0] = platos en mostrador
-    // mem[1] = postres en heladera
-    // mem[2] = pedidos restantes
     mem[0] = 0;
     mem[1] = 0;
     mem[2] = pedidos_totales;
+    mem[3] = 0;
 
     // Crear semáforos
     sem_t *sem_mesada = sem_open(SEM_MESADA, O_CREAT, 0666, 0);
@@ -66,35 +58,31 @@ int main() {
         exit(1);
     }
 
+    printf(VERDE "✓ Iniciando procesos...\n\n" RESET);
+
     // Crear procesos cocineros
-    for (int i = 0; i < 3; i++) {
-        pid_t pid = fork();
-        if (pid == 0) {
+    for (int i = 0; i < NUM_COCINEROS; i++) {
+        if (fork() == 0) {
             execl("./cocinero", "./cocinero", NULL);
             perror("execl cocinero");
             exit(1);
         }
-        pids[num_procesos++] = pid;
     }
 
     // Crear proceso repostero
-    pid_t pid = fork();
-    if (pid == 0) {
+    if (fork() == 0) {
         execl("./repostero", "./repostero", NULL);
         perror("execl repostero");
         exit(1);
     }
-    pids[num_procesos++] = pid;
 
     // Crear procesos mozos
-    for (int i = 0; i < 5; i++) {
-        pid_t pid = fork();
-        if (pid == 0) {
+    for (int i = 0; i < NUM_MOZOS; i++) {
+        if (fork() == 0) {
             execl("./mozo", "./mozo", NULL);
             perror("execl mozo");
             exit(1);
         }
-        pids[num_procesos++] = pid;
     }
 
     // Esperar a que se completen todos los pedidos
@@ -109,19 +97,22 @@ int main() {
         sleep(1);
     }
 
-    printf("\n¡Todos los pedidos han sido entregados!\n");
-    printf("Finalizando procesos...\n");
+    printf(NEGRITA VERDE "\n========================================\n" RESET);
+    printf(NEGRITA VERDE "  ¡Todos los pedidos han sido entregados!\n" RESET);
+    printf(NEGRITA VERDE "========================================\n" RESET);
+    printf(AMARILLO "Esperando que los procesos terminen...\n" RESET);
+    
+    // Activar bandera de terminación
+    sem_wait(sem_mutex);
+    mem[3] = 1;
+    sem_post(sem_mutex);
 
-    // Terminar todos los procesos hijos
-    for (int i = 0; i < num_procesos; i++) {
-        kill(pids[i], SIGTERM);
+    // Esperar a que terminen todos los procesos hijos
+    for (int i = 0; i < (NUM_COCINEROS + 1 + NUM_MOZOS); i++) {
+        wait(NULL);
     }
 
-    // Esperar a que terminen
-    sleep(1);
-    for (int i = 0; i < num_procesos; i++) {
-        waitpid(pids[i], NULL, WNOHANG);
-    }
+    printf(VERDE "✓ Todos los procesos finalizados.\n\n" RESET);
 
     // Limpiar recursos
     munmap(mem, BUFFER_SIZE);

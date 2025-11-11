@@ -4,24 +4,9 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <semaphore.h>
-#include <signal.h>
-
-const int CONTADORES = 3;
-const int BUFFER_SIZE = sizeof(int) * CONTADORES;
-const char *SHM_NAME = "/shared_mem";
-const char *SEM_MESADA = "/sem_MESADA";
-const char *SEM_HELADERA = "/sem_HELADERA";
-const char *SEM_MUTEX = "/sem_MUTEX";
-
-int terminar = 0;
-
-void manejar_senal(int sig) {
-    terminar = 1;
-}
+#include "constantes.h"
 
 int main() {
-    signal(SIGTERM, manejar_senal);
-    
     int shm_fd = shm_open(SHM_NAME, O_RDWR, 0);
     if (shm_fd == -1) {
         exit(1);
@@ -42,13 +27,14 @@ int main() {
 
     srand(getpid());
 
-    while (!terminar) {
-        // Verificar si quedan pedidos por entregar
+    while (1) {
+        // Verificar bandera de terminación y pedidos restantes
         sem_wait(sem_mutex);
+        int debe_terminar = mem[3];
         int pedidos_restantes = mem[2];
         sem_post(sem_mutex);
 
-        if (pedidos_restantes <= 0) {
+        if (debe_terminar || pedidos_restantes <= 0) {
             break;
         }
 
@@ -63,7 +49,9 @@ int main() {
                     mem[0]--;
                     mem[2]--;
                     int restantes = mem[2];
-                    printf("Mozo %d: retiró un plato. Platos en mostrador: %d, Pedidos restantes: %d\n", 
+                    printf(VERDE "🍽️  Mozo %d" RESET " → retiró un " AZUL "plato" RESET ". " 
+                           "Mostrador: " NEGRITA "%d" RESET " | "
+                           AMARILLO "Pedidos restantes: %d\n" RESET, 
                            getpid(), mem[0], restantes);
                     sem_post(sem_mutex);
                     
@@ -71,7 +59,7 @@ int main() {
                     sleep(rand() % 2 + 1);
                 } else {
                     sem_post(sem_mutex);
-                    sem_post(sem_mesada); // Devolver el semáforo si no se consumió
+                    sem_post(sem_mesada);
                 }
             } else {
                 usleep(100000);
@@ -84,7 +72,9 @@ int main() {
                     mem[1]--;
                     mem[2]--;
                     int restantes = mem[2];
-                    printf("Mozo %d: retiró un postre. Postres en heladera: %d, Pedidos restantes: %d\n", 
+                    printf(VERDE "🍽️  Mozo %d" RESET " → retiró un " MAGENTA "postre" RESET ". " 
+                           "Heladera: " NEGRITA "%d" RESET " | "
+                           AMARILLO "Pedidos restantes: %d\n" RESET, 
                            getpid(), mem[1], restantes);
                     sem_post(sem_mutex);
                     
@@ -92,7 +82,7 @@ int main() {
                     sleep(rand() % 2 + 1);
                 } else {
                     sem_post(sem_mutex);
-                    sem_post(sem_heladera); // Devolver el semáforo si no se consumió
+                    sem_post(sem_heladera);
                 }
             } else {
                 usleep(100000);

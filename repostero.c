@@ -4,24 +4,9 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <semaphore.h>
-#include <signal.h>
-
-const int CONTADORES = 3;
-const int BUFFER_SIZE = sizeof(int) * CONTADORES;
-const char *SHM_NAME = "/shared_mem";
-const char *SEM_HELADERA = "/sem_HELADERA";
-const char *SEM_MUTEX = "/sem_MUTEX";
-const int MAX_POSTRES_HELADERA = 25;
-
-int terminar = 0;
-
-void manejar_senal(int sig) {
-    terminar = 1;
-}
+#include "constantes.h"
 
 int main() {
-    signal(SIGTERM, manejar_senal);
-    
     int shm_fd = shm_open(SHM_NAME, O_RDWR, 0);
     if (shm_fd == -1) {
         exit(1);
@@ -39,38 +24,46 @@ int main() {
         exit(1);
     }
 
-    while (!terminar) {
-        // Verificar si debo llenar la heladera
+    while (1) {
+        // Verificar bandera de terminación
         sem_wait(sem_mutex);
+        int debe_terminar = mem[3];
         int postres_actuales = mem[1];
         int pedidos_restantes = mem[2];
         sem_post(sem_mutex);
 
-        if (pedidos_restantes <= 0) {
+        if (debe_terminar || pedidos_restantes <= 0) {
             break;
         }
 
         if (postres_actuales == 0) {
             // Llenar la heladera completa
-            for (int i = 0; i < MAX_POSTRES_HELADERA && !terminar; i++) {
+            for (int i = 0; i < MAX_POSTRES_HELADERA; i++) {
+                // Verificar bandera antes de cada producción
+                sem_wait(sem_mutex);
+                debe_terminar = mem[3];
+                int seguir = (mem[2] > 0 && !debe_terminar);
+                sem_post(sem_mutex);
+                
+                if (!seguir) {
+                    break;
+                }
+                
                 sleep(1); // Simular tiempo de preparación
                 
                 sem_wait(sem_mutex);
-                if (mem[2] > 0) {  // Solo producir si quedan pedidos
-                    mem[1]++;
-                    printf("Repostero: generó un postre. Postres en heladera: %d\n", mem[1]);
-                    sem_post(sem_mutex);
-                    sem_post(sem_heladera); // Señalar que hay un postre disponible
-                } else {
-                    sem_post(sem_mutex);
-                    break;
-                }
+                mem[1]++;
+                printf(MAGENTA "🍰 Repostero" RESET " → generó un postre. " 
+                       NEGRITA "Postres en heladera: %d\n" RESET, mem[1]);
+                sem_post(sem_mutex);
+                
+                sem_post(sem_heladera);
             }
             
-            printf("Repostero: heladera llena, esperando a que se vacíe...\n");
+            printf(MAGENTA "⏸️  Repostero" RESET " → heladera llena, esperando a que se vacíe...\n");
         }
         
-        sleep(1); // Esperar antes de verificar nuevamente
+        sleep(1);
     }
 
     munmap(mem, BUFFER_SIZE);
