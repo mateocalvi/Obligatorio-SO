@@ -9,29 +9,39 @@ const int CONTADORES = 5;
 const int BUFFER_SIZE = sizeof(int) * CONTADORES;
 const char *SHM_NAME = "/shared_mem";
 const char *SEM_HELADERA = "/sem_HELADERA";
-
-const int MAX_PROD_POSTRES = 6;
+const char *SEM_MUTEX = "/sem_MUTEX";
+const int MAX_POSTRES_HELADERA = 25;
 
 int main() {
     int shm_fd = shm_open(SHM_NAME, O_RDWR, 0);
     int *mem = mmap(NULL, BUFFER_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    
     sem_t *sem_heladera = sem_open(SEM_HELADERA, 0);
+    sem_t *sem_mutex = sem_open(SEM_MUTEX, 0);
+
+    srand(getpid());
 
     while (1) {
-        sem_wait(sem_heladera); // Esperar espacio disponible
-        while (mem[3] >= MAX_PROD_POSTRES) {
-            sleep(1);
-        }
-        mem[3]++;       // prodpostres
-        mem[1]++;       // postres
-        mem[4] = 2;     // estado_bandeja = postres
-        printf("Repostero: generó un postre. Postres en heladera: %d\n", mem[1]);
+        // Simular tiempo de preparación
         sleep(rand() % 3 + 1);
-        sem_post(sem_heladera); // Señalar producción
+
+        // Esperar espacio disponible en heladera
+        sem_wait(sem_heladera);
+
+        // Acceder a sección crítica
+        sem_wait(sem_mutex);
+        
+        if (mem[1] < MAX_POSTRES_HELADERA) {
+            mem[1]++;
+            printf("Repostero: generó un postre. Postres en heladera: %d\n", mem[1]);
+        }
+        
+        sem_post(sem_mutex);
     }
 
     munmap(mem, BUFFER_SIZE);
     close(shm_fd);
     sem_close(sem_heladera);
+    sem_close(sem_mutex);
     return 0;
 }
