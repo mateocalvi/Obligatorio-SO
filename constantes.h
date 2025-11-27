@@ -1,34 +1,23 @@
 #ifndef CONSTANTES_H
 #define CONSTANTES_H
 
-// Configuración de memoria compartida
-const int CONTADORES = 4;
-const int BUFFER_SIZE = sizeof(int) * CONTADORES;
+// Constantes para nombres de semáforos
+#define SEM_MESADA     "/sem_mesada"
+#define SEM_HELADERA   "/sem_heladera"
+#define SEM_MUTEX      "/sem_mutex"
+#define SEM_BARRERA    "/sem_barrera"
 
-// Nombres de recursos IPC
-const char *SHM_NAME = "/shared_mem";
-const char *SEM_MESADA = "/sem_MESADA";
-const char *SEM_HELADERA = "/sem_HELADERA";
-const char *SEM_MUTEX = "/sem_MUTEX";
-const char *SEM_BARRERA = "/sem_BARRERA";  // NUEVA LÍNEA
+#define NUM_COCINEROS     2
+#define NUM_MOZOS         3
+#define NUM_REPOSTEROS    1
 
-// Capacidades máximas
-const int MAX_PLATOS_MOSTRADOR = 27;
-const int MAX_POSTRES_HELADERA = 25;
+// Total procesos hijos: cocineros + mozos + reposteros
+#define TOTAL_PROCESOS (NUM_COCINEROS + NUM_MOZOS + NUM_REPOSTEROS)
 
-// Cantidad de procesos
-const int NUM_COCINEROS = 3;
-const int NUM_MOZOS = 5;
-const int TOTAL_PROCESOS = 9;  // 3 cocineros + 1 repostero + 5 mozos
+// Máximo platos que puede tener el mostrador (mesada)
+#define MAX_PLATOS_MOSTRADOR 5
 
-// Colores para prints de consola
-#define RESET   "\e[0m"
-#define ROJO    "\e[31m"
-#define VERDE   "\e[32m"
-#define AMARILLO "\e[33m"
-#define AZUL    "\e[34m"
-#define MAGENTA "\e[35m"
-#define CYAN    "\e[36m"
-#define NEGRITA "\e[1m"
+// Máximo postres que puede tener la heladera
+#define MAX_POSTRES_HELADERA 5
 
 #endif // CONSTANTES_H
