@@ -2,12 +2,12 @@
 
 Simulación de una cantina con múltiples procesos (cocineros, repostero y mozos) que se comunican mediante memoria compartida y semáforos POSIX.
 
-## 📋 Requisitos Previos
+## Requisitos Previos
 
 - Sistema operativo Linux (Ubuntu, Debian, o similar)
 - Acceso a terminal con permisos de administrador (sudo)
 
-## 🔧 Instalación de Herramientas de Compilación
+## Instalación de Herramientas de Compilación
 
 ### Paso 1: Actualizar el sistema
 ```sh
@@ -55,9 +55,9 @@ chmod +x run.sh
 ./run.sh
 ```
 El script automáticamente:
-1. Limpia compilaciones anteriores
-2. Compila todos los archivos `.c`
-3. Ejecuta el programa principal
+1. Compila todos los archivos `.c`
+2. Ejecuta el programa principal
+3. Borra los archivos binarios al finalizar
 
 ### Opción 2: Compilación manual
 
@@ -74,46 +74,31 @@ Ejecuta el programa
 ```sh
 ./main
 ```
-**Nota:** Las banderas `-lrt` y `-lpthread` son necesarias para enlazar las librerías utilizadas.
 
 ## 💻 Uso del Programa
 
 1. Al ejecutar el programa, te pedirá ingresar la cantidad de pedidos a entregar:
 ```
-====================================================
-   SISTEMA DE GESTIÓN DE "LA ALBONDIGA EMBRUJADA"
-====================================================
-
-Ingresa la cantidad de pedidos a entregar: 10
+SISTEMA DE GESTION DE ALBONDIGA EMBRUJADA
+Ingrese la cantidad de pedidos a entregar: 10
 ```
 2. El sistema va a iniciar 9 procesos:
    - 3 Cocineros (generan platos)
    - 1 Repostero (genera postres)
    - 5 Mozos (retiran y entregan pedidos)
 
-3. Vas a ver la salida en tiempo real con colores:
-   - 🍳 **Azul**: Cocineros y platos
-   - 🍰 **Magenta**: Repostero y postres
-   - 🍽️ **Verde**: Mozos y entregas
-   - **Naranja**: Pedidos restantes
+3. Vas a ver la salida en tiempo real
 
 4. El programa va a terminar automáticamente cuando se completen todos los pedidos.
 
-## 🎨 Características
 
-- **Memoria compartida POSIX**: Comunicación eficiente entre procesos
-- **Semáforos**: Sincronización sin condiciones de carrera
-- **Sin deadlocks**: Diseño que evita bloqueos mutuos
-- **Terminación coordinada**: Usando barreras con semáforos (sin espera activa)
-- **Salida colorizada**: Identificación visual de cada tipo de proceso
-
-
-## 👨‍💻 Desarrollo
+## Modificación y testeo
 
 Para modificar el comportamiento del sistema, edita las constantes en `constantes.h`:
 ```c
-const int MAX_PLATOS_MOSTRADOR = 27;
-const int MAX_POSTRES_HELADERA = 25;
-const int NUM_COCINEROS = 3;
-const int NUM_MOZOS = 5;
+#define NUM_COCINEROS     2
+#define NUM_MOZOS         3
+#define NUM_REPOSTEROS    1
+#define MAX_PLATOS_MOSTRADOR 27
+#define MAX_POSTRES_HELADERA 25
 ```

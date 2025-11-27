@@ -24,6 +24,11 @@ int main() {
     printf("Ingrese la cantidad de pedidos a entregar: ");
     scanf("%d", &pedidos_totales);
 
+    if (pedidos_totales < 1) {
+        printf("ERROR: Ingrese un número válido de pedidos\n");
+        exit(1);
+    }
+
     // Limpiar recursos anteriores si existen
     shm_unlink(SHM_MOSTRADOR);
     shm_unlink(SHM_HELADERA);

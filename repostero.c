@@ -51,6 +51,7 @@ int main() {
             for (int i = 0; i < MAX_POSTRES_HELADERA; i++) {
                 // Verificar si debemos continuar
                 sem_wait(sem_mutex);
+                // Si hay que terminar o se acabaron los pedidos, salir
                 if (mem_mostrador[2] || mem_mostrador[1] == 0) {
                     sem_post(sem_mutex);
                     break;

@@ -17,7 +17,7 @@ int main() {
     int shmfd_mostrador = shm_open(SHM_MOSTRADOR, O_RDWR, 0);
     if (shmfd_mostrador == -1) exit(1);
 
-    // Mapear memoria compartida al espacio de direcciones
+    // Mapear memoria compartida
     int *mem_mostrador = mmap(NULL, BUFFERSIZE_MOSTRADOR, PROT_READ | PROT_WRITE, MAP_SHARED, shmfd_mostrador, 0);
     if (mem_mostrador == MAP_FAILED) exit(1);
 
@@ -45,6 +45,7 @@ int main() {
             for (int i = 0; i < MAX_PLATOS_MOSTRADOR; i++) {
                 // Verificar si debemos continuar
                 sem_wait(sem_mutex);
+                // Si hay que terminar o se acabaron los pedidos, salir
                 if (mem_mostrador[2] || mem_mostrador[1] == 0) {
                     sem_post(sem_mutex);
                     break;

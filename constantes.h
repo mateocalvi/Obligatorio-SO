@@ -15,9 +15,9 @@
 #define TOTAL_PROCESOS (NUM_COCINEROS + NUM_MOZOS + NUM_REPOSTEROS)
 
 // Máximo platos que puede tener el mostrador (mesada)
-#define MAX_PLATOS_MOSTRADOR 5
+#define MAX_PLATOS_MOSTRADOR 27
 
 // Máximo postres que puede tener la heladera
-#define MAX_POSTRES_HELADERA 5
+#define MAX_POSTRES_HELADERA 25
 
 #endif // CONSTANTES_H
